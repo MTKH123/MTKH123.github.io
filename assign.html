@@ -40,21 +40,19 @@
   let jobNames = [];
   let jobGroups = [];
 
-  // Wait until Grist is fully initialized
-  window.grist.ready().then(() => {
-    window.grist.subscribe(["JobNames", "JobGroups"]);
+  window.grist.ready(); // Notify Grist we're ready to receive data
+  window.grist.subscribe(["JobNames", "JobGroups"]);
 
-    window.grist.onRecords((tableName, records) => {
-      if (tableName === "JobNames") {
-        jobNames = records;
-      } else if (tableName === "JobGroups") {
-        jobGroups = records;
-      }
+  window.grist.onRecords((tableName, records) => {
+    if (tableName === "JobNames") {
+      jobNames = records;
+    } else if (tableName === "JobGroups") {
+      jobGroups = records;
+    }
 
-      if (jobNames.length && jobGroups.length) {
-        render();
-      }
-    });
+    if (jobNames.length && jobGroups.length) {
+      render();
+    }
   });
 
   function render() {
