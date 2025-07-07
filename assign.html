@@ -40,24 +40,26 @@
   let jobNames = [];
   let jobGroups = [];
 
-  if (window.grist) {
-    window.grist.ready();
-    window.grist.subscribe(["JobNames", "JobGroups"]);
+  // Wait for Grist to inject the plugin API
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.gristDocUrl) {
+      const grist = window.grist;
+      grist.ready();
+      grist.subscribe(["JobNames", "JobGroups"]);
 
-    window.grist.onRecords((tableName, records) => {
-      console.log("Received:", tableName, records);
-      if (tableName === "JobNames") jobNames = records;
-      if (tableName === "JobGroups") jobGroups = records;
+      grist.onRecords((tableName, records) => {
+        console.log("Received:", tableName, records);
+        if (tableName === "JobNames") jobNames = records;
+        if (tableName === "JobGroups") jobGroups = records;
 
-      if (jobNames.length && jobGroups.length) {
-        render();
-      }
-    });
-  } else {
-    container.innerHTML = "⚠️ This widget must be run inside Grist.";
-  }
+        if (jobNames.length && jobGroups.length) {
+          render(grist);
+        }
+      });
+    }
+  });
 
-  function render() {
+  function render(grist) {
     container.innerHTML = "";
 
     jobNames.forEach(job => {
@@ -83,7 +85,7 @@
 
       select.addEventListener("change", () => {
         const newGroupId = select.value || null;
-        window.grist.updateRecord("JobNames", job.id, {
+        grist.updateRecord("JobNames", job.id, {
           jobGroup: newGroupId
         });
       });
