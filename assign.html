@@ -35,70 +35,53 @@
   <h2>Assign Job Groups to Job Names</h2>
   <div id="container">Loading data from Grist...</div>
 
-<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 <script>
-  const container = document.getElementById("container");
-  let jobNames = [];
-  let jobGroups = [];
-
-  function start() {
-    const grist = window.grist;
-    if (!grist || !grist.subscribe) {
-      setTimeout(start, 100); // wait and retry
+  function waitForGrist() {
+    if (!window.grist || !window.grist.subscribe) {
+      setTimeout(waitForGrist, 100);
       return;
     }
 
+    const grist = window.grist;
+    const container = document.getElementById("container");
+    let jobNames = [], jobGroups = [];
+
     grist.ready();
     grist.subscribe(["JobNames", "JobGroups"]);
-
-    grist.onRecords((tableName, records) => {
-      if (tableName === "JobNames") jobNames = records;
-      if (tableName === "JobGroups") jobGroups = records;
-
-      if (jobNames.length && jobGroups.length) {
-        render(grist);
-      }
+    grist.onRecords((table, records) => {
+      if (table === "JobNames") jobNames = records;
+      if (table === "JobGroups") jobGroups = records;
+      if (jobNames.length && jobGroups.length) render(grist, container, jobNames, jobGroups);
     });
   }
 
-  function render(grist) {
+  function render(grist, container, jobNames, jobGroups) {
     container.innerHTML = "";
-
     jobNames.forEach(job => {
       const row = document.createElement("div");
       row.className = "row";
-
       const label = document.createElement("div");
       label.className = "label";
       label.textContent = job.name;
-
       const select = document.createElement("select");
       select.innerHTML = `<option value="">-- Select Group --</option>`;
-
       jobGroups.forEach(group => {
-        const option = document.createElement("option");
-        option.value = group.id;
-        option.textContent = group.jobGroup;
-        if (job.jobGroup === group.id) {
-          option.selected = true;
-        }
-        select.appendChild(option);
+        const opt = document.createElement("option");
+        opt.value = group.id;
+        opt.textContent = group.jobGroup;
+        if (job.jobGroup === group.id) opt.selected = true;
+        select.appendChild(opt);
       });
-
-      select.addEventListener("change", () => {
-        const newGroupId = select.value || null;
-        grist.updateRecord("JobNames", job.id, {
-          jobGroup: newGroupId
-        });
-      });
-
+      select.onchange = () => {
+        grist.updateRecord("JobNames", job.id, { jobGroup: select.value || null });
+      };
       row.appendChild(label);
       row.appendChild(select);
       container.appendChild(row);
     });
   }
 
-  start(); // run after script loads
+  waitForGrist();
 </script>
 
 </body>
