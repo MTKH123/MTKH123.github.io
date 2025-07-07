@@ -35,29 +35,31 @@
   <h2>Assign Job Groups to Job Names</h2>
   <div id="container">Loading data from Grist...</div>
 
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 <script>
   const container = document.getElementById("container");
   let jobNames = [];
   let jobGroups = [];
 
-  // Wait for Grist to inject the plugin API
-  window.addEventListener("message", (event) => {
-    if (event.data && event.data.gristDocUrl) {
-      const grist = window.grist;
-      grist.ready();
-      grist.subscribe(["JobNames", "JobGroups"]);
-
-      grist.onRecords((tableName, records) => {
-        console.log("Received:", tableName, records);
-        if (tableName === "JobNames") jobNames = records;
-        if (tableName === "JobGroups") jobGroups = records;
-
-        if (jobNames.length && jobGroups.length) {
-          render(grist);
-        }
-      });
+  function start() {
+    const grist = window.grist;
+    if (!grist || !grist.subscribe) {
+      setTimeout(start, 100); // wait and retry
+      return;
     }
-  });
+
+    grist.ready();
+    grist.subscribe(["JobNames", "JobGroups"]);
+
+    grist.onRecords((tableName, records) => {
+      if (tableName === "JobNames") jobNames = records;
+      if (tableName === "JobGroups") jobGroups = records;
+
+      if (jobNames.length && jobGroups.length) {
+        render(grist);
+      }
+    });
+  }
 
   function render(grist) {
     container.innerHTML = "";
@@ -95,6 +97,8 @@
       container.appendChild(row);
     });
   }
+
+  start(); // run after script loads
 </script>
 
 </body>
