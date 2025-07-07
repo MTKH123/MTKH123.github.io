@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Assign Job Groups</title>
   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
   <style>
@@ -33,56 +33,62 @@
 </head>
 <body>
   <h2>Assign Job Groups to Job Names</h2>
-  <div id="container">Loading data from Grist...</div>
+  <div id="container">Loading...</div>
 
-<script>
-  function waitForGrist() {
-    if (!window.grist || !window.grist.subscribe) {
-      setTimeout(waitForGrist, 100);
-      return;
-    }
-
-    const grist = window.grist;
+  <script>
     const container = document.getElementById("container");
-    let jobNames = [], jobGroups = [];
+    let jobNames = [];
+    let jobGroups = [];
 
     grist.ready();
-    grist.subscribe(["JobNames", "JobGroups"]);
-    grist.onRecords((table, records) => {
-      if (table === "JobNames") jobNames = records;
-      if (table === "JobGroups") jobGroups = records;
-      if (jobNames.length && jobGroups.length) render(grist, container, jobNames, jobGroups);
-    });
-  }
 
-  function render(grist, container, jobNames, jobGroups) {
-    container.innerHTML = "";
-    jobNames.forEach(job => {
-      const row = document.createElement("div");
-      row.className = "row";
-      const label = document.createElement("div");
-      label.className = "label";
-      label.textContent = job.name;
-      const select = document.createElement("select");
-      select.innerHTML = `<option value="">-- Select Group --</option>`;
-      jobGroups.forEach(group => {
-        const opt = document.createElement("option");
-        opt.value = group.id;
-        opt.textContent = group.jobGroup;
-        if (job.jobGroup === group.id) opt.selected = true;
-        select.appendChild(opt);
+    grist.onRecords((tableName, records) => {
+      if (tableName === "JobNames") {
+        jobNames = records;
+      } else if (tableName === "JobGroups") {
+        jobGroups = records;
+      }
+
+      if (jobNames.length && jobGroups.length) {
+        render();
+      }
+    });
+
+    function render() {
+      container.innerHTML = "";
+
+      jobNames.forEach(job => {
+        const row = document.createElement("div");
+        row.className = "row";
+
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = job.name;
+
+        const select = document.createElement("select");
+        select.innerHTML = `<option value="">-- Select Group --</option>`;
+
+        jobGroups.forEach(group => {
+          const option = document.createElement("option");
+          option.value = group.id;
+          option.textContent = group.jobGroup;
+          if (job.jobGroup === group.id) {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        });
+
+        select.addEventListener("change", () => {
+          grist.updateRecord("JobNames", job.id, {
+            jobGroup: select.value || null
+          });
+        });
+
+        row.appendChild(label);
+        row.appendChild(select);
+        container.appendChild(row);
       });
-      select.onchange = () => {
-        grist.updateRecord("JobNames", job.id, { jobGroup: select.value || null });
-      };
-      row.appendChild(label);
-      row.appendChild(select);
-      container.appendChild(row);
-    });
-  }
-
-  waitForGrist();
-</script>
-
+    }
+  </script>
 </body>
 </html>
